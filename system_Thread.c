@@ -33,8 +33,15 @@ void *System_Thread(void *arg0)
        exit(1);
    }
 
-   while(!getchar()); //Detectar tecla
-   printf("INICIANDO PROGRAMA"); //Permite la inicializacion del programa
+   //CONDICION PARA INICIAR EL PROGRAMA
+   while(EUSCI_A_CMSIS(MAIN_UART) -> TXBUF == 0x00){
+       char c;
+       scanf("%c", &c);
+       UART_sendByte(MAIN_UART, c);
+   }
+
+   UART_putsf(MAIN_UART, "Inicia programa. \n");
+
    funcion_inicial();
 
    /* M�quina de estados sincronizada. */

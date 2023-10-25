@@ -4,15 +4,17 @@
  // Board:			 MSP432P401R
  // Program version: CCS V8.3 TI
  // Company:         Texas Instruments
- // Description:     Descripción general de constantes, macros y configuraciones del módulo UART.
- // Authors:         José Luis Chacón M. y Jesús Alejandro Navarro Acosta.
+ // Description:     Descripciï¿½n general de constantes, macros y configuraciones del mï¿½dulo UART.
+ // Authors:         Josï¿½ Luis Chacï¿½n M. y Jesï¿½s Alejandro Navarro Acosta.
  // Updated:         11/2018
 
 #ifndef UART_MSP432_H_
 #define UART_MSP432_H_
 
-/* Constantes para el uso del módulo. */
+/* Constantes para el uso del mï¿½dulo. */
 #define MAIN_UART (uint32_t)(EUSCI_A0)
+#define TBUFR EUSCI_A_CMSIS(MAIN_UART) -> TXBUF
+#define RBUFR EUSCI_A_CMSIS(MAIN_UART) -> RXBUF
 
 /* Constantes para pasar el valor entero o real a la cadena. */
 #define MAX_DOT_POS 3
@@ -32,11 +34,11 @@
 #define ACLK    1
 #define SMCLK   2
 
-/* Modo de comunicación. */
+/* Modo de comunicaciï¿½n. */
 #define EIGHT_BITS    0
 #define SEVEN_BITS    1
 
-/* Dirección de transmisión. */
+/* Direcciï¿½n de transmisiï¿½n. */
 #define LSB_FIRST 0
 #define MSB_FIRST 1
 
@@ -52,11 +54,11 @@
 #define NO_INTERRUPTION 0
 #define INTERRUPTION    1
 
-/* Modo de comunicación. */
+/* Modo de comunicaciï¿½n. */
 #define ASYNCHRONOUS     0
 #define SYNCHRONOUS      1
 
-/* Macros para la re-definición de funciones del sistema. */
+/* Macros para la re-definiciï¿½n de funciones del sistema. */
 #define EUSCI_A_CMSIS(x) ((EUSCI_A_Type *) x)
 #define EUSCI_B_CMSIS(x) ((EUSCI_B_Type *) x)
 
@@ -84,46 +86,46 @@ typedef enum
 } Parity;
 
 /*******************************************
- *  Funciones de configuración del puerto. *
+ *  Funciones de configuraciï¿½n del puerto. *
  *******************************************/
-/* Establece el número de bits de datos. */
+/* Establece el nï¿½mero de bits de datos. */
 extern void UART_data_bits(bool data_bits);
 /* Establece de donde se toma el reloj del puerto. */
 extern void UART_clck_source(Clk_source source);
-/* Establece el modo al cual trabajará el modulo. */
+/* Establece el modo al cual trabajarï¿½ el modulo. */
 extern void UART_mode(bool synchronization);
-/* Pone en alto la interrupción por carácteres 'break'. */
+/* Pone en alto la interrupciï¿½n por carï¿½cteres 'break'. */
 extern void UART_B_char_IE(bool interruption);
-/* Pone en alto la interrupción por carácteres erróneos. */
+/* Pone en alto la interrupciï¿½n por carï¿½cteres errï¿½neos. */
 extern void UART_E_char_IE(bool interruption);
 /* Establece si se debe contemplar sobremuestreo. */
 extern void UART_set_oversampling(bool oversampling);
 /* Establece si hay paridad o no. */
 extern void UART_set_parity(char parity);
-/* Establece el número de bits de paro en la comunicación. */
+/* Establece el nï¿½mero de bits de paro en la comunicaciï¿½n. */
 extern void UART_set_stop_bits(bool stop_bits);
-/* Establece la dirección de la transmisión (puede ser primero MSB, o LSB). */
+/* Establece la direcciï¿½n de la transmisiï¿½n (puede ser primero MSB, o LSB). */
 extern void UART_set_transmision_dir(bool direction);
-/* Establece los pines sobre los cuales se transmitirá y recibirá el UART. */
+/* Establece los pines sobre los cuales se transmitirï¿½ y recibirï¿½ el UART. */
 extern void UART_set_location_pin(uint32_t selected_port,uint32_t selected_pins);
 /* Establece un baud rate de las opciones disponibles. */
 extern void UART_set_baud_rate(uint8_t standard);
-/* Inicialización y configuración del módulo para su uso posterior. */
+/* Inicializaciï¿½n y configuraciï¿½n del mï¿½dulo para su uso posterior. */
 extern void UART_init(void);
 
 /**********************************
  *  Funciones del uso del puerto. *
  **********************************/
 
-/* Está diseñada para habilitar el uso del módulo UART poniendo en 0 el valor de reset. */
+/* Estï¿½ diseï¿½ada para habilitar el uso del mï¿½dulo UART poniendo en 0 el valor de reset. */
 extern void UART_en(uint32_t moduleInstance);
-/* Está diseñada para deshabilitar el uso del módulo UART poniendo en 1 el valor de reset. */
+/* Estï¿½ diseï¿½ada para deshabilitar el uso del mï¿½dulo UART poniendo en 1 el valor de reset. */
 extern void UART_den(uint32_t moduleInstance);
-/* Envío de un único byte a través de registros. */
+/* Envï¿½o de un ï¿½nico byte a travï¿½s de registros. */
 extern void UART_sendByte(uint32_t moduleInstance, char c);
-/* Envío concatenado de datos byte a byte usando un apuntador. */
+/* Envï¿½o concatenado de datos byte a byte usando un apuntador. */
 extern void UART_putsf(uint32_t moduleInstance, char *s);
-/* Transforma un número a una cadena que recibe directamente los valores a través de un apuntador.
+/* Transforma un nï¿½mero a una cadena que recibe directamente los valores a travï¿½s de un apuntador.
    NOTA: ES PREFERIBLE USAR SPRINTF. */
 extern void UART_NumToString (float result, char* buffer, int digitos_totales, int max_after_dot_values, int entero);
 

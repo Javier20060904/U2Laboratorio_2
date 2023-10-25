@@ -7,8 +7,13 @@
 #include "system.h"
 #define SEGUNDO __SYSTEM_CLOCK
 
-void verde(void);
-void rojo(void);
+uint8_t contadorEstado = 0x00;
+uint8_t contadorApago = 0x00;
+uint8_t contadorSeg = 0x00;
+bool estado = 0; //0 = Verde, 1 = Rojo
+bool prendido = 1;
+
+void cambioDeColor(void);
 void Timer32_INT1(void);
 
 /*FUNCTION*********************************************************************************
@@ -46,7 +51,7 @@ void System_InicialiceUART (void)
 
 void funcion_inicial (void)
 {
-    verde();
+    cambioDeColor();
     //Configuracion de los timers
     //Modo oneshot
     //Prescaler de 1
@@ -55,7 +60,7 @@ void funcion_inicial (void)
     //Registra y habilita la funcion de interrupcion
     Int_registerInterrupt(INT_T32_INT1, Timer32_INT1);
     Int_enableInterrupt(INT_T32_INT1);
-    T32_EnableTimer1(); //Se habilita el timer
+    T32_EnableTimer1(); //Se habilita el timeR
     T32_EnableInterrupt1(); //Habilitamos la interrupcion
     T32_SetLoadValue1(SEGUNDO); //Se asigna un segundo
 }
@@ -70,6 +75,41 @@ void funcion_inicial (void)
 
 void process_events(void)
 {
+    if (estado){
+        UART_putsf(MAIN_UART, "Pausa.\n");
+        return;
+    }
+
+    UART_putsf(MAIN_UART, "Programa ejecutandose.\n");
+
+    //Switch de cambio de estado
+    if(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE)
+    {
+        contadorEstado++;
+        //Asigna al estado lo mismo que la condicional if, o sea, un 1
+        estado = (GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE);
+        //Si el contador es igual a 0 entonces la variable tambien
+        prendido = prendido * !(contadorEstado == 0x06);
+        if(contadorEstado == 0x06)
+            UART_putsf(MAIN_UART, "Programa terminado.\n");
+        while(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE);
+    }
+
+    //Switch de apagado
+    if(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON2) != BOARD_BUTTON_NORMAL_STATE)
+    {
+        contadorApago++;
+        prendido = prendido * !(contadorApago & 0x02);
+        cambioDeColor();
+        contadorApago = contadorApago * !(contadorApago & 0x02);
+        if(contadorApago & 0x02)
+            UART_putsf(MAIN_UART, "Programa terminado. \n");
+        if(contadorApago & 0x01)
+            UART_putsf(MAIN_UART, "Presione de nuevo para apagar. \n");
+        while(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON2) != BOARD_BUTTON_NORMAL_STATE);
+    }
+
+
 }
 
 void Timer32_INT1(void)
@@ -77,18 +117,29 @@ void Timer32_INT1(void)
     T32_ClearInterruptFlag1(); //Se limpia la bandera
     T32_EnableTimer1(); //Se habilita el timer
     T32_EnableInterrupt1(); //Habilitamos la interrupcion
-    GPIO_setOutput(BSP_LED1_PORT,  BSP_LED1, !(GPIO_getInputPinValue(BSP_LED1_PORT, BSP_LED1_PORT)));
-    //La salida alterna entre cero y uno
+    T32_SetLoadValue1((1 + (2*estado)) * SEGUNDO); //Si el boton esta presionado dura 3 seg, sino dura 1
+    cambioDeColor();
+
+    //Si el estado esta en 0 y el contador de apago tiene un 1 en su cuenta, entonces suma uno
+    contadorSeg += ((0x01) * !estado * (contadorApago == 0x01));
+    //Si esta en el rango deseado el valor de la variable queda igual
+    contadorApago = contadorApago * !estado * !(contadorSeg == 0x03);
+    //Si el contador a hecho una suma de 3 segundos entonces vuelve a 0
+    contadorSeg = contadorSeg * !estado * !(contadorSeg == 0x03);
+
+    //Si el estado es verdadero entonces lo regresa a 0
+    estado = (estado * !estado);
 }
 
-void rojo(void){
-    GPIO_setOutput(BSP_LED2_PORT,  BSP_LED2,  1);
-    GPIO_setOutput(BSP_LED3_PORT,  BSP_LED3,  0);
-    GPIO_setOutput(BSP_LED4_PORT,  BSP_LED4,  0);
-}
-
-void verde(void){
-    GPIO_setOutput(BSP_LED2_PORT,  BSP_LED2,  0);
-    GPIO_setOutput(BSP_LED3_PORT,  BSP_LED3,  1);
-    GPIO_setOutput(BSP_LED4_PORT,  BSP_LED4,  0);
+void cambioDeColor(void){
+    //Varias condicionales en el valor que se le va enviar
+    //si el contadorApago es igual a 1
+    //si la variable prendido es 1
+    //El valor de la variable estado
+    GPIO_setOutput(BSP_LED2_PORT,  BSP_LED2, //ROJO
+                                   1 * estado * !(contadorApago & 0x01) * prendido);
+    GPIO_setOutput(BSP_LED3_PORT,  BSP_LED3, //VERDE
+                                   1 * !estado * !(contadorApago & 0x01) * prendido);
+                                            //AZUL
+    GPIO_setOutput(BSP_LED4_PORT,  BSP_LED4,  1 * (contadorApago & 0x01) * prendido);
 }
