@@ -82,14 +82,14 @@ void process_events(void)
     if(estado){ //Sistema en pausa
         return;
     }
-    UART_putsf(MAIN_UART, "Programa ejecutandose.\r\n");
 
     //Switch de PAUSA
-    if(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE)
+    if((GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE) && contadorApago == 0x00)
     {
         contadorEstado++; //Incrementa el contador de estado
         //Asigna al estado lo mismo que la condicional if, o sea, un 1
         estado = (GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE);
+        T32_SetLoadValue1(3 * SEGUNDO); //Si el boton esta presionado la interrupción dura 3 seg,
         //Si el contador es igual a 6 entonces se apaga el led
         prendido = prendido * !(contadorEstado == 0x06);
         cambioDeColor(); //Cambia de color el RGB
@@ -135,7 +135,7 @@ void Timer32_INT1(void)
     T32_ClearInterruptFlag1(); //Se limpia la bandera
     T32_EnableTimer1(); //Se habilita el timer
     T32_EnableInterrupt1(); //Habilitamos la interrupcion
-    T32_SetLoadValue1((1 + (2*estado)) * SEGUNDO); //Si el boton esta presionado dura 3 seg, sino dura 1
+    T32_SetLoadValue1(SEGUNDO); //Si el boton esta presionado dura 3 seg, sino dura 1
     cambioDeColor();
 
     //Si el estado esta en 0 y el contador de apago tiene un 1 en su cuenta, entonces suma uno
@@ -145,8 +145,13 @@ void Timer32_INT1(void)
     //Si el contador a hecho una suma de 3 segundos entonces vuelve a 0
     contadorSeg = contadorSeg * !estado * !(contadorSeg == 0x03);
 
-    //Si el estado es verdadero entonces lo regresa a 0
-    estado = (estado * !estado);
+    if(estado != 0x00){
+        UART_putsf(MAIN_UART, "Programa ejecutandose.\r\n");
+        //Si el estado es verdadero entonces lo regresa a 0
+        estado = (estado * !estado);
+        cambioDeColor();
+    }
+
 }
 
 /*FUNCTION******************************************************************************

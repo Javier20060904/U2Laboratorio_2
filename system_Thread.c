@@ -36,6 +36,10 @@ void *System_Thread(void *arg0)
    while(TRUE){
        //Apaga los LED antes de iniciar
        GPIO_setOutput(BSP_LED2_PORT,  BSP_LED2, 0);
+       GPIO_setOutput(BSP_LED3_PORT,  BSP_LED3, 0);
+       GPIO_setOutput(BSP_LED4_PORT,  BSP_LED4, 0);
+
+       T32_DisableTimer1();
 
        //CONDICION PARA INICIAR EL PROGRAMA
        //Mientras la bandera de UCRXIFG no esté activa el programa no inicia
