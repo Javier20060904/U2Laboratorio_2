@@ -109,11 +109,11 @@ void process_events(void)
         prendido = prendido * !(contadorApago & 0x02); //Si el contador es igual a dos entonces el estado de prendido es igual a 0
         cambioDeColor(); //Cambia de color el RGB
         if(contadorApago & 0x02){
-            UART_putsf(MAIN_UART, "Programa terminado. \r\n");
+            UART_putsf(MAIN_UART, "Programa terminado. \r\n");  //Indica la salida por terminal
             EUSCI_A_CMSIS(MAIN_UART) -> IFG &= !0x0D;       //Borra la bandera UCRXIFG
         }
-        if(contadorApago & 0x01)
-            UART_putsf(MAIN_UART, "Presione de nuevo para apagar. \r\n");
+        if(contadorApago & 0x01)    //Si se presiona una sola vez...
+            UART_putsf(MAIN_UART, "Presione de nuevo para apagar. \r\n");   //Indica instrucciones por terminal
         //Reinicia el contador de apagado cuando llegue a 2
         contadorApago = contadorApago * !(contadorApago & 0x02);
         while(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON2) != BOARD_BUTTON_NORMAL_STATE);
@@ -136,21 +136,23 @@ void Timer32_INT1(void)
     T32_EnableTimer1(); //Se habilita el timer
     T32_EnableInterrupt1(); //Habilitamos la interrupcion
     T32_SetLoadValue1(SEGUNDO); //Si el boton esta presionado dura 3 seg, sino dura 1
-    cambioDeColor();
+    cambioDeColor();        //Cambia de color el RGB
 
     //Si el estado esta en 0 y el contador de apago tiene un 1 en su cuenta, entonces suma uno
     contadorSeg += ((0x01) * !estado * (contadorApago == 0x01));
     //Si contadorSeg esta en el rango (0-3 seg), el valor de la variable queda igual, de caso contario se pone a 0
     contadorApago = contadorApago * !estado * !(contadorSeg == 0x03);
+
+    if(estado != 0x00 || contadorSeg == 0x03){     //Al terminar los 3seg se borra la bandera de estado...
+            UART_putsf(MAIN_UART, "Programa ejecutandose.\r\n");  //Imprime reanudación por terminal
+            estado = (estado * !estado);    //Si el estado es verdadero entonces lo regresa a 0
+            cambioDeColor();        //Cambia de color el RGB
+        }
+
     //Si el contador a hecho una suma de 3 segundos entonces vuelve a 0
     contadorSeg = contadorSeg * !estado * !(contadorSeg == 0x03);
 
-    if(estado != 0x00){
-        UART_putsf(MAIN_UART, "Programa ejecutandose.\r\n");
-        //Si el estado es verdadero entonces lo regresa a 0
-        estado = (estado * !estado);
-        cambioDeColor();
-    }
+
 
 }
 
