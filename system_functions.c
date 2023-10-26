@@ -51,7 +51,10 @@ void System_InicialiceUART (void)
 
 void funcion_inicial (void)
 {
-    cambioDeColor();
+    prendido = 1;
+    contadorEstado = 0x00;
+    contadorApago = 0x00;
+    contadorSeg = 0x00;
     //Configuracion de los timers
     //Modo oneshot
     //Prescaler de 1
@@ -75,14 +78,9 @@ void funcion_inicial (void)
 
 void process_events(void)
 {
-    if (estado){
-        UART_putsf(MAIN_UART, "Pausa.\n");
-        return;
-    }
+    //UART_putsf(MAIN_UART, "Programa ejecutandose.\r\n");
 
-    UART_putsf(MAIN_UART, "Programa ejecutandose.\n");
-
-    //Switch de cambio de estado
+    //Switch de PAUSA
     if(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE)
     {
         contadorEstado++;
@@ -90,22 +88,29 @@ void process_events(void)
         estado = (GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE);
         //Si el contador es igual a 0 entonces la variable tambien
         prendido = prendido * !(contadorEstado == 0x06);
-        if(contadorEstado == 0x06)
-            UART_putsf(MAIN_UART, "Programa terminado.\n");
+        if(contadorEstado < 0x06)
+            UART_putsf(MAIN_UART, "Pausa \r\n");
+        if(contadorEstado == 0x06){
+            UART_putsf(MAIN_UART, "Programa terminado. \r\n");
+            EUSCI_A_CMSIS(MAIN_UART) -> IFG &= !0x0D;       //Borra la bandera UCRXIFG
+        }
         while(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON1) != BOARD_BUTTON_NORMAL_STATE);
     }
 
-    //Switch de apagado
+    //Switch de APAGADO
     if(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON2) != BOARD_BUTTON_NORMAL_STATE)
     {
         contadorApago++;
         prendido = prendido * !(contadorApago & 0x02);
         cambioDeColor();
-        contadorApago = contadorApago * !(contadorApago & 0x02);
-        if(contadorApago & 0x02)
-            UART_putsf(MAIN_UART, "Programa terminado. \n");
+        if(contadorApago & 0x02){
+            UART_putsf(MAIN_UART, "Programa terminado. \r\n");
+            EUSCI_A_CMSIS(MAIN_UART) -> IFG &= !0x0D;       //Borra la bandera UCRXIFG
+        }
         if(contadorApago & 0x01)
-            UART_putsf(MAIN_UART, "Presione de nuevo para apagar. \n");
+            UART_putsf(MAIN_UART, "Presione de nuevo para apagar. \r\n");
+        //Reinicia el contador de APAGADO
+        contadorApago = contadorApago * !(contadorApago & 0x02);
         while(GPIO_getInputPinValue(BSP_BUTTON1_PORT, BSP_BUTTON2) != BOARD_BUTTON_NORMAL_STATE);
     }
 
@@ -136,10 +141,7 @@ void cambioDeColor(void){
     //si el contadorApago es igual a 1
     //si la variable prendido es 1
     //El valor de la variable estado
-    GPIO_setOutput(BSP_LED2_PORT,  BSP_LED2, //ROJO
-                                   1 * estado * !(contadorApago & 0x01) * prendido);
-    GPIO_setOutput(BSP_LED3_PORT,  BSP_LED3, //VERDE
-                                   1 * !estado * !(contadorApago & 0x01) * prendido);
-                                            //AZUL
-    GPIO_setOutput(BSP_LED4_PORT,  BSP_LED4,  1 * (contadorApago & 0x01) * prendido);
+    GPIO_setOutput(BSP_LED2_PORT,  BSP_LED2, 1 * estado * !(contadorApago & 0x01) * prendido);  //ROJO
+    GPIO_setOutput(BSP_LED3_PORT,  BSP_LED3, 1 * !estado * !(contadorApago & 0x01) * prendido); //VERDE
+    GPIO_setOutput(BSP_LED4_PORT,  BSP_LED4,  1 * (contadorApago & 0x01) * prendido);           //AZUL
 }

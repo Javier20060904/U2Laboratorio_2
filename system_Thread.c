@@ -33,21 +33,22 @@ void *System_Thread(void *arg0)
        exit(1);
    }
 
-   //CONDICION PARA INICIAR EL PROGRAMA
-   while(EUSCI_A_CMSIS(MAIN_UART) -> TXBUF == 0x00){
-       char c;
-       scanf("%c", &c);
-       UART_sendByte(MAIN_UART, c);
-   }
+   while(TRUE){
+       //Apaga los LED antes de iniciar
+       GPIO_setOutput(BSP_LED2_PORT,  BSP_LED2, 0);
 
-   UART_putsf(MAIN_UART, "Inicia programa. \n");
+       //CONDICION PARA INICIAR EL PROGRAMA
+       //Mientras la bandera de UCRXIFG no esté activa el programa no inicia
+       while(EUSCI_A_CMSIS(MAIN_UART) -> IFG == 0x02 || EUSCI_A_CMSIS(MAIN_UART) -> IFG == 0x0A){}
 
-   funcion_inicial();
+       funcion_inicial();
+       UART_putsf(MAIN_UART, "Inicia programa. \r\n");
 
-   /* M�quina de estados sincronizada. */
-   while(TRUE)
-   {
-       process_events();
-       usleep(1000);
+       /* Maquina de estados sincronizada. */
+       while(EUSCI_A_CMSIS(MAIN_UART) -> IFG != 0x02 && EUSCI_A_CMSIS(MAIN_UART) -> IFG != 0x0A)
+       {
+           process_events();
+           usleep(1000);
+       }
    }
 }
