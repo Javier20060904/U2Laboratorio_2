@@ -7,12 +7,13 @@
 #include "system.h"
 #define SEGUNDO __SYSTEM_CLOCK
 
-uint8_t contadorEstado = 0x00; //Contador de cuantas veces se pone en pausa
-uint8_t contadorApago = 0x00; //Contador de cuantas veces se presiona el boton de apago
-uint8_t contadorSeg = 0x00; //Contador de segundos (para el timer)
-bool estado = 0; //0 = Verde (En ejecucion), 1 = Rojo (Pausa)
-bool prendido = 1; //Estado del LED RGB
+uint8_t contadorEstado = 0x00;  //Contador de cuantas veces se pone en pausa
+uint8_t contadorApago = 0x00;   //Contador de cuantas veces se presiona el boton de apago
+uint8_t contadorSeg = 0x00;     //Contador de segundos (para el timer)
+bool estado = 0;    //0 = Verde (En ejecucion), 1 = Rojo (Pausa)
+bool prendido = 1;  //Estado del LED RGB
 
+/*Definición de funciones*/
 void cambioDeColor(void);
 void Timer32_INT1(void);
 
@@ -33,7 +34,7 @@ void System_InicialiceIO(void)
 *
 * Function Name    : System_InicialiceUART
 * Returned Value   : None.
-* Comments         :
+* Comments         : El contenido de "UART_init()" no fue modificado
 *
 *END***********************************************************************************/
 void System_InicialiceUART (void)
@@ -56,10 +57,7 @@ void funcion_inicial (void)
     contadorEstado = 0x00;
     contadorApago = 0x00;
     contadorSeg = 0x00;
-    //Configuracion de los timers
-    //Modo oneshot
-    //Prescaler de 1
-    //32 bits
+    //Configuracion de los timers: / Modo oneshot / Prescaler de 1 / 32 bits
     T32_Configure1(TIMER32_OneShotMode, TIMER32_PrescaleDiv_1, TIMER32_32BitSize);
     //Registra y habilita la funcion de interrupcion
     Int_registerInterrupt(INT_T32_INT1, Timer32_INT1);
@@ -73,13 +71,15 @@ void funcion_inicial (void)
 *
 * Function Name    : process_events
 * Returned Value   : None.
-* Comments         :
+* Comments         : Dentro de esta función se encuentran los controles de los botones
+*                    de PAUSA y APAGADO
 *
 *END***********************************************************************************/
 
 void process_events(void)
 {
     if(estado){ //Sistema en pausa
+        //Mientras estado esté activo no se aceptan otras entradas
         return;
     }
 
@@ -126,7 +126,7 @@ void process_events(void)
 *
 * Function Name    : Timer32_INT1
 * Returned Value   : None.
-* Comments         :
+* Comments         : Controla las interrupciones asociadas al Timer32
 *
 *END***********************************************************************************/
 
@@ -143,7 +143,7 @@ void Timer32_INT1(void)
     //Si contadorSeg esta en el rango (0-3 seg), el valor de la variable queda igual, de caso contario se pone a 0
     contadorApago = contadorApago * !estado * !(contadorSeg == 0x03);
 
-    if(estado != 0x00 || contadorSeg == 0x03){     //Al terminar los 3seg se borra la bandera de estado...
+    if(estado != 0x00 || contadorSeg == 0x03){     //Al terminar los 3seg tanto para PAUSA como APAGADO..
             UART_putsf(MAIN_UART, "Programa ejecutandose.\r\n");  //Imprime reanudación por terminal
             estado = (estado * !estado);    //Si el estado es verdadero entonces lo regresa a 0
             cambioDeColor();        //Cambia de color el RGB
@@ -160,7 +160,8 @@ void Timer32_INT1(void)
 *
 * Function Name    : cambioDeColor
 * Returned Value   : None.
-* Comments         : cambia el color segun los estados de las variables
+* Comments         : Cambia el color de los LED dependiendo de las banderas de PAUSA
+*                    ("estado"), APAGADO ("contadorApago") y "prendido"
 *
 *END***********************************************************************************/
 void cambioDeColor(void){

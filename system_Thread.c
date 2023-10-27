@@ -39,16 +39,18 @@ void *System_Thread(void *arg0)
        GPIO_setOutput(BSP_LED3_PORT,  BSP_LED3, 0);
        GPIO_setOutput(BSP_LED4_PORT,  BSP_LED4, 0);
 
+       //Deshabilita el timer por completo
        T32_DisableTimer1();
 
        //CONDICION PARA INICIAR EL PROGRAMA
        //Mientras la bandera de UCRXIFG no esté activa el programa no inicia
        while(EUSCI_A_CMSIS(MAIN_UART) -> IFG == 0x02 || EUSCI_A_CMSIS(MAIN_UART) -> IFG == 0x0A){}
 
-       funcion_inicial();
-       UART_putsf(MAIN_UART, "Inicia programa. \r\n");
+       funcion_inicial();       //Inicia el timer y reinicia variables
+       UART_putsf(MAIN_UART, "Inicia programa. \r\n");  //Comunica el inicio por terminal
 
        /* Maquina de estados sincronizada. */
+       //Mientras la bandera de UCRXIFG siga activa "process_events()" sigue ejecutandose
        while(EUSCI_A_CMSIS(MAIN_UART) -> IFG != 0x02 && EUSCI_A_CMSIS(MAIN_UART) -> IFG != 0x0A)
        {
            process_events();
